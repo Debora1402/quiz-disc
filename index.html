@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz DISC — Qual personagem você é?</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: linear-gradient(160deg,#fff0f6 0%,#fdf4ff 45%,#f0f4ff 100%); min-height: 100vh; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+const rawQuestions = [
+  {id:1, text:"O RH decidiu que todo mundo precisa ter um apelido no trabalho. Qual seria o seu?",
+    options:[
+      {text:"O Resolvedor / A Resolvedora — sou conhecido(a) por fazer as coisas acontecerem.", disc:"D"},
+      {text:"Animação — porque o ambiente fica diferente quando estou por perto.", disc:"I"},
+      {text:"Âncora — sempre presente, sempre confiável.", disc:"S"},
+      {text:"O Arquivo / A Arquivo — tenho a informação que ninguém mais tem.", disc:"C"},
+    ]},
+  {id:2, text:"Você ganhou R$50 milhões na Mega Sena. Mas tem uma pegadinha: precisa gastar tudo em 24 horas ou perde. O que você faz?",
+    options:[
+      {text:"Compra um helicóptero e um apartamento em 3 cidades.", disc:"D"},
+      {text:"Faz a festa mais épica da história e convida todo mundo.", disc:"I"},
+      {text:"Distribui entre família e amigos — não consigo gastar isso sozinho(a).", disc:"S"},
+      {text:"Entra em pânico, abre planilha e começa a pesquisar opções.", disc:"C"},
+    ]},
+  {id:3, text:"Se você fosse um país, qual seria?",
+    options:[
+      {text:"🇺🇸 EUA — rápido, direto, quer ser o primeiro em tudo.", disc:"D"},
+      {text:"🇧🇷 Brasil — alegre, caloroso, faz amizade com todo mundo.", disc:"I"},
+      {text:"🇨🇭 Suíça — estável, confiável, tudo funciona no horário.", disc:"S"},
+      {text:"🇩🇪 Alemanha — preciso, organizado, segue o manual à risca.", disc:"C"},
+    ]},
+  {id:4, text:"O que mais te irrita no trabalho?",
+    options:[
+      {text:"Processo lento, enrolação, decisão que não sai.", disc:"D"},
+      {text:"Ambiente frio, sem troca, sem conexão com as pessoas.", disc:"I"},
+      {text:"Mudanças inesperadas sem alinhamento prévio.", disc:"S"},
+      {text:"Entregar algo com informação incompleta ou sem revisão.", disc:"C"},
+    ]},
+  {id:5, text:"Como as pessoas costumam te descrever?",
+    options:[
+      {text:'"Aquele(a) que resolve e não fica esperando ninguém."', disc:"D"},
+      {text:'"Aquele(a) que anima qualquer ambiente."', disc:"I"},
+      {text:'"Aquele(a) em quem todo mundo confia."', disc:"S"},
+      {text:'"Aquele(a) que pergunta o que ninguém pensou em perguntar."', disc:"C"},
+    ]},
+  {id:6, text:"Surge um imprevisto urgente no meio do dia. Você:",
+    options:[
+      {text:"Já estou resolvendo — penso e ajo ao mesmo tempo.", disc:"D"},
+      {text:"Chamo alguém para pensar junto, é mais rápido assim.", disc:"I"},
+      {text:"Ouço todo mundo e busco uma solução que funcione para o grupo.", disc:"S"},
+      {text:"Analiso a causa raiz antes de qualquer ação.", disc:"C"},
+    ]},
+  {id:7, text:"Qual animal te representa melhor no trabalho?",
+    options:[
+      {text:"🦅 Águia — visão ampla, decide rápido e vai em frente.", disc:"D"},
+      {text:"🦜 Papagaio — comunicativo, colorido e impossível de ignorar.", disc:"I"},
+      {text:"🐘 Elefante — calmo, leal, nunca esquece quem precisa de apoio.", disc:"S"},
+      {text:"🦉 Coruja — observa tudo, fala pouco e quando fala, todos anotam.", disc:"C"},
+    ]},
+  {id:8, text:"Qual dessas frases você JAMAIS diria no trabalho?",
+    options:[
+      {text:"Deixa pra depois, não tem pressa nenhuma.", disc:"D"},
+      {text:"Hoje não estou com vontade de falar com ninguém.", disc:"I"},
+      {text:"Problema do time? Cada um que se vire.", disc:"S"},
+      {text:"Não precisa pesquisar, vai no feeling mesmo.", disc:"C"},
+    ]},
+  {id:9, text:"Num fim de semana perfeito, você estaria:",
+    options:[
+      {text:"Numa aventura ou fazendo algo que te desafia.", disc:"D"},
+      {text:"Com muita gente, rolê, papo e energia boa.", disc:"I"},
+      {text:"Em casa, tranquilo(a), com quem você ama.", disc:"S"},
+      {text:"Mergulhado(a) num livro, série ou hobby que exige concentração.", disc:"C"},
+    ]},
+  {id:10, text:"Se você fosse um superpoder, qual seria?",
+    options:[
+      {text:"⚡ Super velocidade — fazer tudo em tempo recorde.", disc:"D"},
+      {text:"🧠 Telepatia — ler a mente das pessoas e conectar com qualquer um.", disc:"I"},
+      {text:"💚 Cura — restaurar equilíbrio onde há caos.", disc:"S"},
+      {text:"🔮 Onisciência — saber absolutamente tudo sobre tudo.", disc:"C"},
+    ]},
+  {id:11, text:"Você recebe uma crítica inesperada no seu trabalho. Sua reação interna:",
+    options:[
+      {text:'"Ok, o que precisa mudar? Vamos corrigir agora."', disc:"D"},
+      {text:'"Caramba, não esperava isso… preciso conversar sobre isso."', disc:"I"},
+      {text:'"Será que eu deixei alguém na mão?"', disc:"S"},
+      {text:'"Quero entender exatamente onde errei e por quê."', disc:"C"},
+    ]},
+  {id:12, text:"Qual frase te faria sorrir por três dias seguidos?",
+    options:[
+      {text:'"Se não fosse você, isso ainda estaria na fila de pendências."', disc:"D"},
+      {text:'"Você transformou até a reunião de segunda-feira numa coisa boa."', disc:"I"},
+      {text:'"Quando você está de férias, a gente sente falta de verdade."', disc:"S"},
+      {text:'"Você encontrou um erro que ninguém, em hipótese alguma, teria achado."', disc:"C"},
+    ]},
+  {id:13, text:"Se o mundo fosse acabar amanhã, o que você faria hoje?",
+    options:[
+      {text:"Já tinha um bunker montado e um plano de 30 dias de sobrevivência.", disc:"D"},
+      {text:"Organizava a maior festa do apocalipse — se vai acabar, que acabe com estilo.", disc:"I"},
+      {text:"Cozinhava um jantar incrível pra todo mundo e fingia que estava tudo bem.", disc:"S"},
+      {text:"Pesquisava compulsivamente as chances reais de sobrevivência antes de tomar qualquer decisão.", disc:"C"},
+    ]},
+];
+
+function shuffle(arr, seed) {
+  const a=[...arr]; let s=seed;
+  for(let i=a.length-1;i>0;i--){s=(s*9301+49297)%233280;const j=Math.floor((s/233280)*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+const characters = {
+  D:[{name:"Mulan",gender:"F"},{name:"Mérida",gender:"F"},{name:"Sininho",gender:"F"},{name:"Tiana",gender:"F"},{name:"Mulher-Gato",gender:"F"},{name:"Hércules",gender:"M"},{name:"Batman",gender:"M"},{name:"Homem de Ferro",gender:"M"}],
+  I:[{name:"Moana",gender:"F"},{name:"Rapunzel",gender:"F"},{name:"Ariel",gender:"F"},{name:"Anna",gender:"F"},{name:"Arlequina",gender:"F"},{name:"Dory",gender:"F"},{name:"Fiona",gender:"F"},{name:"Aladdin",gender:"M"},{name:"Mickey Mouse",gender:"M"},{name:"Gênio",gender:"M"}],
+  S:[{name:"Wendy",gender:"F"},{name:"Pocahontas",gender:"F"},{name:"Branca de Neve",gender:"F"},{name:"Cinderela",gender:"F"},{name:"Aurora",gender:"F"},{name:"Chapeuzinho Vermelho",gender:"F"},{name:"Simba",gender:"M"},{name:"Kristoff",gender:"M"}],
+  C:[{name:"Bela",gender:"F"},{name:"Elsa",gender:"F"},{name:"Jasmine",gender:"F"},{name:"Alice",gender:"F"},{name:"Jean Grey",gender:"F"},{name:"Buzz Lightyear",gender:"M"},{name:"Remy",gender:"M"},{name:"Coringa",gender:"M"}],
+};
+
+const characterOrigins = {
+  "Mulan":"Mulan (1998)","Mérida":"Valente (2012)","Sininho":"Peter Pan (1953)",
+  "Tiana":"A Princesa e o Sapo (2009)","Mulher-Gato":"DC Comics / Batman Returns",
+  "Hércules":"Hércules (1997)","Batman":"DC Comics","Homem de Ferro":"Marvel Comics",
+  "Moana":"Moana (2016)","Rapunzel":"Enrolados (2010)","Ariel":"A Pequena Sereia (1989)",
+  "Anna":"Frozen (2013)","Arlequina":"DC Comics / Batman","Dory":"Procurando Nemo (2003)",
+  "Fiona":"Shrek (2001)","Aladdin":"Aladdin (1992)","Mickey Mouse":"Disney (1928)",
+  "Gênio":"Aladdin (1992)","Wendy":"Peter Pan (1953)","Pocahontas":"Pocahontas (1995)",
+  "Branca de Neve":"Branca de Neve (1937)","Cinderela":"Cinderela (1950)",
+  "Aurora":"A Bela Adormecida (1959)","Chapeuzinho Vermelho":"Shrek 2 (2004)",
+  "Simba":"O Rei Leão (1994)","Kristoff":"Frozen (2013)","Bela":"A Bela e a Fera (1991)",
+  "Elsa":"Frozen (2013)","Jasmine":"Aladdin (1992)","Alice":"Alice no País das Maravilhas (1951)",
+  "Jean Grey":"Marvel Comics / X-Men","Buzz Lightyear":"Toy Story (1995)",
+  "Remy":"Ratatouille (2007)","Coringa":"DC Comics / Batman",
+};
+
+const characterColors = {
+  "Mulan":["#c0392b","#e74c3c"],"Mérida":["#27ae60","#2ecc71"],"Sininho":["#f39c12","#f1c40f"],
+  "Tiana":["#16a085","#1abc9c"],"Mulher-Gato":["#2c3e50","#7f8c8d"],"Hércules":["#2980b9","#3498db"],
+  "Batman":["#1a1a2e","#4a4a8a"],"Homem de Ferro":["#c0392b","#f39c12"],
+  "Moana":["#2471a3","#1abc9c"],"Rapunzel":["#9b59b6","#f1c40f"],"Ariel":["#16a085","#2980b9"],
+  "Anna":["#2980b9","#c0392b"],"Arlequina":["#e74c3c","#8e44ad"],"Dory":["#1a5276","#2980b9"],
+  "Fiona":["#1e8449","#27ae60"],"Aladdin":["#d35400","#e67e22"],"Mickey Mouse":["#1a1a2e","#e74c3c"],
+  "Gênio":["#1a5276","#2980b9"],"Wendy":["#1a5276","#2980b9"],"Pocahontas":["#6e2f1a","#27ae60"],
+  "Branca de Neve":["#c0392b","#1a1a2e"],"Cinderela":["#1a5276","#85c1e9"],"Aurora":["#7d3c98","#f1c40f"],
+  "Chapeuzinho Vermelho":["#c0392b","#922b21"],"Simba":["#d35400","#f39c12"],"Kristoff":["#2e4057","#5d6d7e"],
+  "Bela":["#d68910","#2980b9"],"Elsa":["#2e86c1","#85c1e9"],"Jasmine":["#117a65","#9b59b6"],
+  "Alice":["#1f618d","#f1c40f"],"Jean Grey":["#922b21","#7d3c98"],"Buzz Lightyear":["#1a5276","#c0392b"],
+  "Remy":["#6c3483","#c0392b"],"Coringa":["#7d3c98","#27ae60"],
+};
+
+const profileDescriptions = {
+  D:{title:"Dominância",color:"#ff6b9d",desc:"Você é assertivo(a), direto(a) e focado(a) em fazer acontecer. Tem senso de urgência natural, não gosta de enrolação e age com confiança mesmo sob pressão.",strengths:["Assertividade","Senso de urgência","Decisão ágil","Alta energia"],tip:"Sua força está na velocidade e na coragem. O segredo é pausar para ouvir — as melhores ideias às vezes estão no silêncio dos outros."},
+  I:{title:"Influência",color:"#ffaa00",desc:"Você tem um talento raro: as pessoas se sentem bem perto de você. É comunicativo(a), entusiasta e naturalmente persuasivo(a).",strengths:["Comunicação","Persuasão","Entusiasmo","Relacionamentos"],tip:"Sua força está em conectar e inspirar. O segredo é equilibrar o entusiasmo com o foco nos detalhes que fazem a entrega acontecer."},
+  S:{title:"Estabilidade",color:"#6bcb77",desc:"Você é consistente, confiável e tem uma escuta que poucas pessoas desenvolvem de verdade. Cria harmonia onde existe tensão e pensa nas consequências antes de agir.",strengths:["Escuta ativa","Consistência","Cooperação","Equilíbrio emocional"],tip:"Sua força está na lealdade e na calma estratégica. O segredo é confiar mais na sua voz — suas opiniões são mais valiosas do que parecem."},
+  C:{title:"Conformidade",color:"#a29bfe",desc:"Você é analítico(a), criterioso(a) e preciso(a). Antes de qualquer decisão, estuda, questiona e garante que nada foi deixado de lado.",strengths:["Análise crítica","Precisão","Rigor","Pensamento lógico"],tip:"Sua força está na qualidade e na profundidade. O segredo é confiar na sua análise e avançar mesmo quando ainda restam perguntas sem resposta."},
+};
+
+const discInfo = {
+  D:{full:"Dominância",why:"Age rápido, fala direto e não gosta de perder tempo."},
+  I:{full:"Influência",why:"Comunicativo(a), entusiasta, constrói relações com facilidade."},
+  S:{full:"Estabilidade",why:"Consistente, leal, escuta com atenção e valoriza harmonia."},
+  C:{full:"Conformidade",why:"Analítico(a), detalhista, decisões baseadas em dados e fatos."},
+};
+
+function CharAvatar({characterName, profileColor}) {
+  const cols = characterColors[characterName] || [profileColor, profileColor+"99"];
+  const words = characterName.split(" ");
+  const initials = words.length >= 2 ? words[0][0]+words[words.length-1][0] : characterName.slice(0,2);
+  return (
+    <div style={{position:"relative",width:200,height:200,margin:"0 auto 16px",animation:"float 3s ease-in-out infinite"}}>
+      <div style={{position:"absolute",inset:-6,borderRadius:"50%",background:`conic-gradient(${profileColor}cc,#fff,${profileColor}cc)`,animation:"spin 4s linear infinite",opacity:0.6}}/>
+      <div style={{position:"absolute",inset:-2,borderRadius:"50%",background:"white"}}/>
+      <div style={{position:"absolute",inset:0,borderRadius:"50%",overflow:"hidden",background:`linear-gradient(135deg,${cols[0]},${cols[1]})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+        <span style={{fontSize:56,fontWeight:900,color:"white",opacity:0.25,lineHeight:1}}>{initials.toUpperCase()}</span>
+        <span style={{position:"absolute",fontSize:20,fontWeight:900,color:"white",textAlign:"center",padding:"0 12px",textShadow:"0 2px 8px rgba(0,0,0,0.3)",lineHeight:1.2}}>{characterName}</span>
+      </div>
+    </div>
+  );
+}
+
+const bg = "linear-gradient(160deg,#fff0f6 0%,#fdf4ff 45%,#f0f4ff 100%)";
+
+function App() {
+  const [screen, setScreen] = useState("intro");
+  const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [result, setResult] = useState(null);
+  const [selected, setSelected] = useState(null);
+
+  const seed = useMemo(() => Date.now(), []);
+  const shuffledQ = useMemo(() => rawQuestions.map((q,qi) => ({...q, options: shuffle(q.options, seed+qi*137)})), [seed]);
+
+  const goBack = () => {
+    if(current===0){setScreen("intro");setAnswers([]);setSelected(null);return;}
+    setCurrent(c=>c-1);setAnswers(a=>a.slice(0,-1));setSelected(null);
+  };
+
+  const handleAnswer = (disc) => {
+    if(selected) return;
+    setSelected(disc);
+    setTimeout(() => {
+      const na = [...answers, disc];
+      if(current+1 < shuffledQ.length){setAnswers(na);setCurrent(c=>c+1);setSelected(null);}
+      else{setAnswers(na);calcResult(na);}
+    }, 380);
+  };
+
+  const calcResult = async (ans) => {
+    setScreen("loading");
+    const counts = {D:0,I:0,S:0,C:0};
+    ans.forEach(a => counts[a]++);
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    const dom = sorted[0][0], sec = sorted[1][0];
+    const pool = characters[dom].filter(c => gender==="M" ? true : c.gender==="F");
+    const fp = pool.length>0 ? pool : characters[dom];
+
+    const summary = shuffledQ.map((q,i) => {
+      const opt = q.options.find(o => o.disc===ans[i]);
+      return `${i+1}. ${q.text} → ${opt?.text}`;
+    }).join("\n");
+
+    const prompt = `Especialista em DISC e cultura pop. Tom: divertido, elogioso, leve.
+DISC: D=assertivo,urgente,direto | I=comunicativo,entusiasta,relações | S=consistente,leal,escuta | C=analítico,detalhista,dados
+Nome: ${name} | Gênero: ${gender==="M"?"Masculino":"Feminino"}
+Dominante: ${dom} | Secundário: ${sec} | D=${counts.D} I=${counts.I} S=${counts.S} C=${counts.C}
+Respostas:\n${summary}
+Personagens: ${fp.map(c=>c.name).join(", ")}
+Escolha UM considerando nuances. S: não use "mãe do time". Sem métricas comerciais.
+Para characterDesc: 4-5 frases robustas e divertidas sobre o personagem e por que representa ${name}.
+JSON sem markdown:
+{"character":"nome exato","reason":"2 frases criativas e elogiosas","characterDesc":"descrição 4-5 frases","superpower":"superpoder em uma frase"}`;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})
+      });
+      const data = await res.json();
+      const text = data.content?.map(i=>i.text||"").join("")||"";
+      const parsed = JSON.parse(text.replace(/```json|```/g,"").trim());
+      const charData = fp.find(c=>c.name===parsed.character)||fp[0];
+      setResult({profile:dom,counts,character:charData,reason:parsed.reason,characterDesc:parsed.characterDesc,superpower:parsed.superpower});
+    } catch {
+      const charData = fp[Math.floor(Math.random()*fp.length)];
+      setResult({profile:dom,counts,character:charData,reason:`${name} combina perfeitamente com ${charData.name}!`,characterDesc:`${charData.name} é um personagem icônico que representa ${name}.`,superpower:"Transformar complexidade em clareza"});
+    }
+    setScreen("result");
+  };
+
+  const restart = () => {setScreen("intro");setName("");setGender("");setCurrent(0);setAnswers([]);setResult(null);setSelected(null);};
+
+  const card = (children, extra={}) => (
+    <div style={{background:"white",borderRadius:20,padding:20,marginBottom:12,boxShadow:"0 4px 20px rgba(160,80,200,0.1)",...extra}}>{children}</div>
+  );
+
+  if(screen==="intro") return (
+    <div style={{minHeight:"100vh",background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{textAlign:"center",marginBottom:32,animation:"fadeIn 0.6s ease"}}>
+        <div style={{fontSize:64,marginBottom:8}}>✨</div>
+        <h1 style={{fontSize:28,fontWeight:900,color:"#5b2d8e",margin:0}}>Qual personagem você é?</h1>
+        <p style={{color:"#b06fcc",fontSize:15,marginTop:8,fontWeight:600}}>Descubra seu perfil DISC e seu alter ego mágico!</p>
+      </div>
+      <div style={{background:"white",borderRadius:24,padding:32,width:"100%",maxWidth:420,boxShadow:"0 8px 40px rgba(180,100,220,0.13)"}}>
+        <div style={{marginBottom:20}}>
+          <label style={{display:"block",fontWeight:700,color:"#5b2d8e",marginBottom:8}}>Seu nome ✏️</label>
+          <input style={{width:"100%",borderRadius:14,padding:"12px 16px",border:"2px solid #e8d5f5",fontSize:16,color:"#3d1a6e",outline:"none",background:"#fdf8ff"}}
+            placeholder="Digite seu nome..." value={name} onChange={e=>setName(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&name.trim()&&gender&&setScreen("quiz")}/>
+        </div>
+        <div style={{marginBottom:28}}>
+          <label style={{display:"block",fontWeight:700,color:"#5b2d8e",marginBottom:10}}>Você é 👇</label>
+          <div style={{display:"flex",gap:12}}>
+            {[["F","Mulher 👩"],["M","Homem 👨"]].map(([v,l])=>(
+              <button key={v} onClick={()=>setGender(v)} style={{flex:1,padding:"12px 8px",borderRadius:14,fontWeight:700,fontSize:15,cursor:"pointer",background:gender===v?"linear-gradient(135deg,#ff6b9d,#c44dcc)":"#fdf4ff",color:gender===v?"white":"#9b59b6",border:gender===v?"2px solid #ff6b9d":"2px solid #e8d5f5"}}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <button onClick={()=>setScreen("quiz")} disabled={!name.trim()||!gender} style={{width:"100%",padding:"14px 0",borderRadius:16,fontWeight:900,fontSize:17,cursor:name.trim()&&gender?"pointer":"not-allowed",background:name.trim()&&gender?"linear-gradient(135deg,#ff6b9d,#c44dcc)":"#e8d5f5",color:name.trim()&&gender?"white":"#b09cc0",border:"none"}}>
+          Começar o Quiz 🚀
+        </button>
+      </div>
+      <p style={{color:"#c094d8",fontSize:13,marginTop:20,fontWeight:600}}>13 perguntas · ~4 minutos</p>
+    </div>
+  );
+
+  if(screen==="loading") return (
+    <div style={{minHeight:"100vh",background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+      <div style={{fontSize:72,marginBottom:20,animation:"bounce 1s infinite"}}>🔮</div>
+      <h2 style={{fontSize:24,fontWeight:900,color:"#5b2d8e",marginBottom:8}}>Analisando seu perfil...</h2>
+      <p style={{color:"#b06fcc",fontSize:15,fontWeight:600,marginBottom:32}}>A IA está encontrando seu personagem ideal!</p>
+      <div style={{display:"flex",gap:10}}>
+        {["#ff6b9d","#ffaa00","#6bcb77","#a29bfe"].map((c,i)=>(
+          <div key={i} style={{width:14,height:14,borderRadius:"50%",background:c,animation:`bounce 0.8s infinite ${i*0.15}s`}}/>
+        ))}
+      </div>
+    </div>
+  );
+
+  if(screen==="result"&&result) {
+    const {profile,counts,character,reason,characterDesc,superpower} = result;
+    const pi = profileDescriptions[profile];
+    const total = Object.values(counts).reduce((a,b)=>a+b,0);
+    return (
+      <div style={{minHeight:"100vh",background:bg,padding:"24px 16px 48px"}}>
+        <div style={{maxWidth:460,margin:"0 auto",animation:"fadeIn 0.5s ease"}}>
+          <div style={{textAlign:"center",paddingTop:16,marginBottom:20}}>
+            <CharAvatar characterName={character.name} profileColor={pi.color}/>
+            <h1 style={{fontSize:38,fontWeight:900,color:"#3d1a6e",margin:"0 0 4px"}}>{character.name}</h1>
+            <p style={{color:"#b06fcc",fontSize:13,fontWeight:600,margin:"0 0 10px"}}>{characterOrigins[character.name]}</p>
+            <div style={{display:"inline-block",padding:"6px 22px",borderRadius:50,fontWeight:800,fontSize:15,color:"white",background:`linear-gradient(135deg,${pi.color},${pi.color}cc)`}}>
+              Perfil {profile} — {pi.title}
+            </div>
+          </div>
+          {card(<><p style={{color:"#b06fcc",fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,margin:"0 0 10px"}}>🎭 Seu personagem</p><p style={{color:"#3d1a6e",fontSize:15,lineHeight:1.75,margin:0,fontWeight:600}}>{characterDesc}</p></>, {border:`2px solid ${pi.color}33`})}
+          {card(<><p style={{color:"#b06fcc",fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,margin:"0 0 8px"}}>🪄 Por que você é {character.name}</p><p style={{color:"#3d1a6e",fontSize:15,lineHeight:1.7,margin:0,fontWeight:600}}>{reason}</p></>, {borderLeft:`4px solid ${pi.color}`})}
+          {card(<><p style={{color:"#b06fcc",fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,margin:"0 0 6px"}}>⚡ Seu superpoder</p><p style={{color:"#3d1a6e",fontSize:17,fontWeight:800,margin:0}}>{superpower}</p></>)}
+          <div style={{background:`linear-gradient(135deg,${pi.color}18,${pi.color}08)`,borderRadius:20,padding:20,marginBottom:12,border:`1.5px solid ${pi.color}44`}}>
+            <p style={{color:"#b06fcc",fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,margin:"0 0 6px"}}>💡 Dica do seu perfil</p>
+            <p style={{color:"#4a2080",fontSize:14,fontWeight:600,margin:0,lineHeight:1.6}}>{pi.tip}</p>
+          </div>
+          {card(<>
+            <p style={{color:"#b06fcc",fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,margin:"0 0 14px"}}>📊 Seu perfil DISC</p>
+            {Object.entries(counts).map(([k,v])=>(
+              <div key={k} style={{marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <div><span style={{fontSize:13,fontWeight:800,color:"#5b2d8e"}}>{k} — {discInfo[k].full}</span>
+                  <p style={{fontSize:11,color:"#9b7cc0",margin:"1px 0 0",fontWeight:600}}>{discInfo[k].why}</p></div>
+                  <span style={{fontSize:14,fontWeight:800,color:profileDescriptions[k].color}}>{Math.round((v/total)*100)}%</span>
+                </div>
+                <div style={{background:"#f3e8ff",borderRadius:8,height:10,overflow:"hidden"}}>
+                  <div style={{height:10,borderRadius:8,width:`${(v/total)*100}%`,background:`linear-gradient(90deg,${profileDescriptions[k].color},${profileDescriptions[k].color}99)`}}/>
+                </div>
+              </div>
+            ))}
+          </>)}
+          {card(<>
+            <p style={{color:"#b06fcc",fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,margin:"0 0 12px"}}>💎 Seus pontos fortes</p>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {pi.strengths.map(s=>(
+                <span key={s} style={{padding:"7px 16px",borderRadius:50,fontSize:13,fontWeight:700,color:"white",background:`linear-gradient(135deg,${pi.color},${pi.color}bb)`}}>{s}</span>
+              ))}
+            </div>
+          </>, {marginBottom:24})}
+          <button onClick={restart} style={{width:"100%",padding:"14px 0",borderRadius:16,fontWeight:900,fontSize:16,cursor:"pointer",background:"linear-gradient(135deg,#ff6b9d,#c44dcc)",color:"white",border:"none"}}>
+            Fazer novamente 🔄
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const q = shuffledQ[current];
+  const progress = (current/shuffledQ.length)*100;
+  return (
+    <div style={{minHeight:"100vh",background:bg,padding:"20px 16px 40px"}}>
+      <div style={{maxWidth:480,margin:"0 auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <button onClick={goBack} style={{background:"none",border:"none",cursor:"pointer",color:"#b06fcc",fontWeight:700,fontSize:14,padding:"4px 0"}}>← Voltar</button>
+          <span style={{fontSize:13,fontWeight:700,color:"#b06fcc"}}>{current+1} / {shuffledQ.length}</span>
+        </div>
+        <div style={{background:"#f3e8ff",borderRadius:8,height:8,marginBottom:24,overflow:"hidden"}}>
+          <div style={{height:8,borderRadius:8,width:`${progress}%`,background:"linear-gradient(90deg,#ff6b9d,#c44dcc)",transition:"width 0.4s ease"}}/>
+        </div>
+        <div style={{background:"white",borderRadius:20,padding:"20px 22px 16px",marginBottom:20,boxShadow:"0 4px 24px rgba(160,80,200,0.1)",borderTop:"4px solid #ff6b9d",animation:"fadeIn 0.35s ease"}}>
+          <p style={{color:"#3d1a6e",fontSize:17,fontWeight:800,margin:0,lineHeight:1.5}}>{q.text}</p>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {q.options.map((opt,i)=>(
+            <button key={i} onClick={()=>handleAnswer(opt.disc)} disabled={selected!==null}
+              style={{width:"100%",textAlign:"left",padding:"14px 18px",borderRadius:16,fontWeight:600,fontSize:15,cursor:selected?"default":"pointer",transition:"all 0.2s",lineHeight:1.5,background:selected===opt.disc?"#f3e8ff":"white",color:"#3d1a6e",border:selected===opt.disc?"2px solid #c44dcc":"2px solid #f0e0ff",transform:selected===opt.disc?"scale(1.02)":"scale(1)"}}>
+              <span style={{fontWeight:800,color:"#d580ff",marginRight:10}}>{String.fromCharCode(65+i)}.</span>
+              {opt.text}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
